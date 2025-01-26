@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Loans - Librarian Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">📚 Librarian Management</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/frontend/index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/frontend/books.html">Books</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/frontend/customers.html">Customers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/frontend/loans.html">Loans</a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-5">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold">Manage Loans</h2>
+        </div>
+
+        <div class="d-flex justify-content-center gap-3 mb-4">
+            <button class="btn btn-primary" onclick="showAddLoanSection()">Add Loan</button>
+            <button class="btn btn-success" onclick="showFindLoanSection()">Find Loan</button>
+            <button class="btn btn-warning" onclick="DisplayLateLoansSection()">Display Late Loans</button>
+        </div>
+
+        <section id="add-loan-section" class="card p-4 shadow border-0" style="display: none;">
+            <h3 class="text-primary">Add a Loan</h3>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" id="customername" class="form-control" placeholder="Customer Name" />
+                </div>
+                <div class="col-md-6">
+                    <input type="text" id="bookname" class="form-control" placeholder="Book Name" />
+                </div>
+                <div class="col-12 text-end">
+                    <button class="btn btn-primary" onclick="addLoan()">Add Loan</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="find-loan-section" class="card p-4 shadow border-0" style="display: none;">
+            <h3 class="text-success">Find Loan</h3>
+            <div class="input-group">
+                <input type="text" id="findCustomerName" class="form-control"
+                    placeholder="Search Loan by Customer Name" />
+                <button class="btn btn-success" onclick="findLoan()">Find</button>
+            </div>
+            <ul id="loan-search-results" class="list-group mt-3"></ul>
+        </section>
+
+        <section id="display-loans-section" class="card p-4 shadow border-0" style="display: none;">
+            <h3 class="text-warning">Loans List</h3>
+            <ul id="loan-list" class="list-group">
+            </ul>
+        </section>
+    </main>
+
+    <footer class="bg-dark text-white text-center py-3">
+        <div class="container">
+            <p class="mb-0">&copy; 2025 Librarian Management System. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
+
+    <script>
+        const SERVER = "http://127.0.0.1:5001/loans";
+        const loanList = document.getElementById('loan-list');
+        const loanSearchResults = document.getElementById('loan-search-results');
+
+
+
+        const getAuthConfig = () => {
+            const token = localStorage.getItem("access_token");
+            if (!token) {
+                console.error("No access token found");
+                alert("No access token found. Please log in again.");
+                window.location.href = "login.html"; 
+                return null; 
+            }
+
+            return {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            };
+        };
+
+
+        const signOut = () => {
+            localStorage.removeItem('access_token'); 
+            window.location.href = 'login.html'; 
+        };
+
+        const displayLoans = async () => {
+            const config = getAuthConfig();
+            if (!config) return;
+            try {
+                const response = await axios.get(SERVER,config);
+                const loans = response.data;
+                loanList.innerHTML = "";
+                loans.forEach(loan => {
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+                    li.textContent = `${loan.book_name} Loaned By ${loan.customer_name}, Return date:${loan.return_date}`;
+                    const returnButton = document.createElement('button');
+                    returnButton.classList.add('btn', 'btn-danger', 'btn-sm');
+                    returnButton.textContent = "Return";
+                    returnButton.onclick = () => returnLoan(loan.loan_id);
+                    li.appendChild(returnButton);
+                    loanList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Error fetching loans:", error);
+            }
+        };
+
+
+
+        const displayLateLoans = async () => {
+            
+            try {
+                const response = await axios.get(`${SERVER}/late`);
+                const loans = response.data;
+                loanList.innerHTML = "";
+
+                loans.forEach(loan => {
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+                    li.textContent = `${loan.book_name} Loaned By ${loan.customer_name}, Return date:${loan.return_date}`;
+                    const returnButton = document.createElement('button');
+                    returnButton.classList.add('btn', 'btn-danger', 'btn-sm');
+                    returnButton.textContent = "Return";
+                    returnButton.onclick = () => returnLoan(loan.loan_id);
+                    li.appendChild(returnButton);
+                    loanList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Error fetching loans:", error);
+            }
+        };
+
+
+        const addLoan = async () => {
+            const config = getAuthConfig();
+            if (!config) return;
+            
+            const loanData = {
+                customer_name: document.getElementById('customername').value,
+                book_name: document.getElementById('bookname').value,
+            };
+
+            await axios.post(SERVER, loanData,config); console.log(loanData)
+            document.getElementById('customername').value = '';
+            document.getElementById('bookname').value = '';
+        };
+
+        const returnLoan = async (loan_id) => {
+            try {
+                await axios.delete(`${SERVER}/${loan_id}`);
+                displayLoans();
+            } catch (error) {
+                console.error("Error returning loan:", error);
+            }
+        };
+
+        const findLoan = async () => {
+            const customerName = document.getElementById('findCustomerName').value.toLowerCase();
+            loanSearchResults.innerHTML = '';
+            document.getElementById('findCustomerName').value = '';
+
+            const response = await axios.get(`${SERVER}/${customerName}`);
+
+            if (response.data && response.data.length > 0) {
+                response.data.forEach(loan => {
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+                    li.textContent = `${loan.book_name} loaned to ${loan.customer_name}`;
+                    const returnButton = document.createElement('button');
+                    returnButton.classList.add('btn', 'btn-danger', 'btn-sm');
+                    returnButton.textContent = "Return";
+                    returnButton.onclick = () => returnLoan(loan.loan_id);
+                    li.appendChild(returnButton);
+                    loanSearchResults.appendChild(li);
+                });
+            } else {
+                const noResults = document.createElement('li');
+                noResults.classList.add('list-group-item');
+                noResults.textContent = 'No loans found.';
+                loanSearchResults.appendChild(noResults);
+            }
+        };
+
+        const showAddLoanSection = () => {
+            document.getElementById('add-loan-section').style.display = 'block';
+            document.getElementById('find-loan-section').style.display = 'none';
+            document.getElementById('display-loans-section').style.display = 'none';
+        };
+
+        const showFindLoanSection = () => {
+            document.getElementById('add-loan-section').style.display = 'none';
+            document.getElementById('find-loan-section').style.display = 'block';
+            document.getElementById('display-loans-section').style.display = 'none';
+        };
+
+        const showDisplayLoansSection = () => {
+            document.getElementById('add-loan-section').style.display = 'none';
+            document.getElementById('find-loan-section').style.display = 'none';
+            document.getElementById('display-loans-section').style.display = 'block';
+            displayLoans();
+        };
+        const DisplayLateLoansSection = () => {
+            document.getElementById('add-loan-section').style.display = 'none';
+            document.getElementById('find-loan-section').style.display = 'none';
+            document.getElementById('display-loans-section').style.display = 'block';
+            displayLateLoans();
+        };
+
+        document.addEventListener('DOMContentLoaded', showDisplayLoansSection);
+    </script>
+</body>
+
+</html>

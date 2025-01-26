@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Books</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    .card {
+      height: 100%;
+    }
+
+    .card-img-top {
+      height: auto;
+      max-height: 200px;
+      width: 100%;
+      object-fit: contain;
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      text-align: center;
+    }
+
+    .card-text {
+      font-size: 1.2rem;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body class="bg-light">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="#">📚 Librarian Management</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="/frontend/index.html">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/frontend/books.html">Books</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/frontend/customers.html">Customers</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/frontend/loans.html">Loans</a>
+          </li>
+          <li class="nav-item">
+            <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-5">
+    <div class="text-center mb-4">
+      <h2 class="fw-bold">Manage Books</h2>
+    </div>
+
+    <div class="d-flex justify-content-center gap-3 mb-4">
+      <button class="btn btn-primary" onclick="showAddBookSection()">Add Book</button>
+      <button class="btn btn-success" onclick="showFindBookSection()">Find Book</button>
+      <button class="btn btn-warning" onclick="showDisplayBooksSection()">Display Books</button>
+    </div>
+    <section id="add-book-section" class="card p-4 shadow border-0" style="display: none;">
+      <h3 class="text-primary">Add a book</h3>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <input type="text" id="bookname" class="form-control" placeholder="Book Name" />
+        </div>
+        <div class="col-md-6">
+          <input type="text" id="author" class="form-control" placeholder="Author" />
+        </div>
+        <div class="col-md-6">
+          <input type="number" id="year_published" class="form-control" placeholder="Year Published" />
+        </div>
+        <div class="col-md-6">
+          <select id="type" class="form-select">
+            <option value="" selected disabled>Select Loan Type</option>
+            <option value="1">10 Days</option>
+            <option value="2">5 Days</option>
+            <option value="3">2 Days</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <input type="number" id="amount" class="form-control" placeholder="Amount" />
+        </div>
+        <div class="col-12 text-end">
+          <button class="btn btn-primary" onclick="addBook()">Add Book</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="find-book-section" class="card p-4 shadow border-0" style="display: none;">
+      <h3 class="text-success">Find Book</h3>
+      <div class="input-group">
+        <input type="text" id="findBookName" class="form-control" placeholder="Search Book by Name" />
+        <button class="btn btn-success" onclick="findBook()">Find</button>
+      </div>
+      <ul id="search-results" class="list-group mt-3"></ul>
+    </section>
+
+    <section id="display-books-section" class="card p-4 shadow border-0" style="display: none;">
+      <div class="container mt-5">
+        <h2 class="text-center mb-4">Books</h2>
+        <div id="book-list" class="row"></div>
+      </div>
+    </section>
+    
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="bookIntroCanvas" aria-labelledby="bookIntroCanvasLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="bookIntroCanvasLabel">Book Introduction</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <p id="book-intro-text">No introduction available.</p>
+      </div>
+    </div>
+    <footer class="bg-primary text-white text-center py-3 mt-5">
+      <div class="container">
+        <p class="mb-0">Library Management System &copy; 2023</p>
+      </div>
+    </footer>
+
+    <script>
+      const SERVER = 'http://127.0.0.1:5001/books'; 
+
+      const signOut = () => {
+        localStorage.removeItem('access_token'); 
+        window.location.href = 'login.html'; 
+      };
+      const getAuthConfig = () => {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          console.error("No access token found");
+          alert("No access token found. Please log in again.");
+          window.location.href = "login.html"; 
+          return null; 
+        }
+
+        return {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        };
+      };
+      const displayBooks = async () => {
+        const config = getAuthConfig();
+        if (!config) return; 
+        try {
+          const response = await axios.get(SERVER, config);
+          const books = response.data;
+          const bookList = document.getElementById('book-list');
+          bookList.innerHTML = ""; 
+
+          books.forEach(book => {
+            const bookCard = document.createElement('div');
+            bookCard.classList.add('col-md-4', 'mb-4');
+
+            bookCard.innerHTML = `
+            <div class="card">
+              <img src="${book.file_name[0] || 'default-image.jpg'}" class="card-img-top" alt="${book.book_name}">
+              <div class="card-body">
+                <h5 class="card-title">${book.book_name}</h5>
+                <p class="card-text">by ${book.author}</p>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-danger btn-sm" onclick="deleteBook(${book.book_id})">Delete</button>
+                  <button class="btn btn-primary btn-sm" onclick="displayBooksintro('${book.book_name}')">Intro</button>
+                  <button class="btn btn-secondary btn-sm" onclick="addBookImg('${book.book_name}')">Add Image</button>
+                </div>
+              </div>
+            </div>
+          `;
+
+            bookList.appendChild(bookCard);
+          });
+        } catch (error) {
+          console.error("Error fetching books:", error);
+        }
+      };
+      const displayBooksintro = async (book_name) => {
+      try {
+        const response = await axios.get(`${SERVER}/intro/${book_name}`);
+        const bookData = response.data;
+        console.log(bookData);
+
+        const introText = document.getElementById('book-intro-text');
+        introText.textContent = bookData || "No introduction available for this book.";
+
+        const offCanvas = new bootstrap.Offcanvas(document.getElementById('bookIntroCanvas'));
+        offCanvas.show();
+      } catch (error) {
+        console.error("Error fetching book intro:", error);
+      }
+    };
+
+    const addBookImg = async (book_name) => {
+      const config = getAuthConfig();
+        if (!config) return; 
+      try {
+        const response = await axios.post(`${SERVER}/img`, { book_name: book_name },config);
+        console.log(`Image added for book: ${book_name}`);
+        displayBooks(); 
+      } catch (error) {
+        console.error("Error adding book image:", error);
+      }
+    };
+      const addBook = async () => {
+        const config = getAuthConfig();
+        if (!config) return; 
+        const bookName = document.getElementById('bookname').value;
+        const author = document.getElementById('author').value;
+        const yearPublished = document.getElementById('year_published').value;
+        const type = document.getElementById('type').value;
+        const amount = document.getElementById('amount').value;
+
+        try {
+          const response = await axios.post(SERVER, {
+            book_name: bookName,
+            author: author,
+            year_published: yearPublished,
+            type: type,
+            amount: amount
+          }, config);
+          console.log(`Book added: ${response.data.book_name}`);
+          displayBooks(); 
+        } catch (error) {
+          console.error("Error adding book:", error);
+        }
+      };
+
+      const findBook = async () => {
+        const bookName = document.getElementById('findBookName').value;
+
+        try {
+          const response = await axios.get(`${SERVER}/${bookName}`);
+          const book = response.data;
+          const searchResults = document.getElementById('search-results');
+          searchResults.innerHTML = ""; 
+
+          const bookItem = document.createElement('li');
+          bookItem.classList.add('list-group-item');
+          bookItem.innerHTML = `
+          <h5>${book.book_name}</h5>
+          <p>by ${book.author}</p>
+        `;
+          searchResults.appendChild(bookItem);
+        } catch (error) {
+          console.error("Error finding book:", error);
+        }
+      };
+
+      const deleteBook = async (book_id) => {
+        try {
+          await axios.delete(`${SERVER}/${book_id}`);
+          console.log(`Book with ID ${book_id} deleted`);
+          displayBooks(); 
+        } catch (error) {
+          console.error("Error deleting book:", error);
+        }
+      };
+
+      const showAddBookSection = () => {
+        document.getElementById('add-book-section').style.display = 'block';
+        document.getElementById('find-book-section').style.display = 'none';
+        document.getElementById('display-books-section').style.display = 'none';
+      };
+
+      const showFindBookSection = () => {
+        document.getElementById('add-book-section').style.display = 'none';
+        document.getElementById('find-book-section').style.display = 'block';
+        document.getElementById('display-books-section').style.display = 'none';
+      };
+
+      const showDisplayBooksSection = () => {
+        document.getElementById('add-book-section').style.display = 'none';
+        document.getElementById('find-book-section').style.display = 'none';
+        document.getElementById('display-books-section').style.display = 'block';
+        displayBooks();
+      };
+
+      document.addEventListener('DOMContentLoaded', showDisplayBooksSection);
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

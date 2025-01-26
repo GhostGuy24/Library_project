@@ -60,14 +60,14 @@ This project is the backend for a library management system, designed to help li
    This will set up and populate the database with sample data for testing.
 
 
-### Users for Testing
+### Users for Testing 
 - **Librarian**:
-  - Username: `librarian`
-  - Password: `123`
+  - Username: `sara`
+  - Password: `123456`
   - Permissions: Full access.
 - **Read-Only Users**:
-  - Username: `guy` or `tomer`
-  - Password: `123`
+  - Username: `guy` 
+  - Password: `123456`
   - Permissions: Limited access.
 
 ### Running the App
@@ -118,5 +118,3 @@ You can test the app using the HTML pages provided in the `frontend` folder. The
 
 ---
 
-## License
-This project is licensed under the MIT License. Feel free to use and modify it as needed.

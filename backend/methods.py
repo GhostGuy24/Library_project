@@ -1,14 +1,14 @@
-from datetime import date, datetime, timedelta
-from sqlalchemy import DateTime, Boolean, Column, ForeignKey, Integer, String, and_, create_engine, func
-from sqlalchemy.orm import scoped_session, sessionmaker, declarative_base, relationship
-from dbClasses import *
+from datetime import datetime, timedelta
+import os
+from sqlalchemy import and_, func
 import google.generativeai as genai
 from flask_jwt_extended import create_access_token
-from io import BytesIO
-from PIL import Image
 import requests
 import uuid
 from bs4 import BeautifulSoup
+from dbClasses import Customer, Book, User, Loan, UploadedFile,db_session
+
+
 
 
 loan_type_to_days = {

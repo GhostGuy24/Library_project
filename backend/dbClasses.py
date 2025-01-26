@@ -6,7 +6,6 @@ import os
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 engine = create_engine(f'sqlite:///{os.path.join(basedir, "library.db")}')
-# engine = create_engine('sqlite:///library.db')
 db_session = scoped_session(sessionmaker(autocommit=False,autoflush=False,bind=engine))
 Base = declarative_base()
 Base.query = db_session.query_property()
@@ -117,7 +116,7 @@ class User(Base):
                 "active": self.active
             }
         def verify_password(self, password):
-            return checkpw(password.encode('utf-8'), self.password.encode('utf-8'))  # Verify password
+            return checkpw(password.encode('utf-8'), self.password.encode('utf-8')) 
 
 class UploadedFile(Base):
     __tablename__ = 'files'

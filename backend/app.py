@@ -1,3 +1,4 @@
+from datetime import date
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from methods import *
@@ -8,42 +9,54 @@ from flask import Flask, request, jsonify
 from flask_jwt_extended import  jwt_required, get_jwt_identity
 from flask_bcrypt import Bcrypt
 import logging
+from flask_sqlalchemy import SQLAlchemy
 
-# Before running the app, run the following function in the python shell to populate the database with some data:
+
+app = Flask(__name__)
+
+logging.basicConfig(level=logging.ERROR)
+app.config['SQLALCHEMY_DATABASE_URI'] = str(engine.url)
+app.config['JWT_SECRET_KEY'] = 'Guyzaken29'
+app.config['JWT_SECRET_KEY'] = 'Guyzaken29'
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'instances')
+
+db = SQLAlchemy(app)
+jwt = JWTManager(app)
+jwt = JWTManager(app)
+bcrypt = Bcrypt(app)
+CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "PUT", "OPTIONS"]}})
+
+# only if db is empty, run the following function in the entry point to populate the database with some data:
 def populate_db():
         
-        c1 = Customer(customer_name='Guy Zaken', city='Tel Aviv', age=29,active=True)
-        c2 = Customer(customer_name='Tomer Knoler', city='Tel Aviv', age=30,active=True)
+        c1 = Customer(customer_name='Guy Zaken', city='Tel Aviv', age=29)
+        c2 = Customer(customer_name='Tomer Knoler', city='Tel Aviv', age=30)
 
         db_session.add_all([c1, c2])
 
 
         b1 = Book(book_name='The Great Gatsby', author='F. Scott Fitzgerald',
-                  year_published=1925, type=1, amount=3, instock=True)
+                  year_published=1925, type=1, amount=3)
         b2 = Book(book_name='1984', author='George Orwell', year_published=1949,
-                  type=2, amount=5, instock=False)
+                  type=2, amount=5)
         b3 = Book(book_name='To Kill a Mockingbird', author='Harper Lee',
-                  year_published=1960, type=3, amount=4, instock=True)
+                  year_published=1960, type=3, amount=4)
         b4 = Book(book_name='Brave New World', author='Aldous Huxley',
-                  year_published=1932, type=1, amount=2, instock=False)
+                  year_published=1932, type=1, amount=2)
         b5 = Book(book_name='Moby Dick', author='Herman Melville',
-                  year_published=1851, type=2, amount=6, instock=True)
+                  year_published=1851, type=2, amount=6)
         b6 = Book(book_name='Pride and Prejudice', author='Jane Austen',
-                  year_published=1813, type=3, amount=1, instock=True)
+                  year_published=1813, type=3, amount=1)
 
         db_session.add_all([b1, b2, b3, b4, b5, b6])
         
-        # password for all users is 123
-        u1 = User(user_name='guy', password='$2b$12$F62xls1G8tJGjmMO909jsuSElujw.7eQa6m5mKpfyLeWrNvnhr0fG', permission='read_only',
-                  active=True, customer_name='Guy Zaken')
-        u2 = User(user_name='librarian', password='$2b$12$kVeVoUCSWF4m87onjLb9ku2nmhgepqoVpSXdODEeyQ1wrI/MYtaFu', permission='read_write',
-                  active=True, customer_name=None)
-        u3 = User(user_name='tomer', password='$2b$12$ESMXDTpCI4cs9.XZDKCAB.ajoXFQ.Ik7CPwnzW1cPwhfFEezbUMfq', permission='read_only',
-                  active=True)
+        u1 = User(user_name='guy', password='123456', permission='read_only',customer_id=1)
+        u2 = User(user_name='sara', password='123456', permission='read_write',customer_id=None)
+        u3 = User(user_name='tomer', password='123', permission='read_only',customer_id=1)
 
         db_session.add_all([u1, u2, u3])
 
-        # Commit so books and users get IDs assigned
         db_session.commit()
 
         l1 = Loan(book_id=b1.book_id, customer_id=c1.customer_id,
@@ -68,18 +81,6 @@ def populate_db():
         db_session.add_all([l1, l2, l3, l4, l5, l6])
 
         db_session.commit()
-
-
-logging.basicConfig(level=logging.ERROR)
-app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = 'Guyzaken29'
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
-app.config['UPLOAD_FOLDER'] = '/Users/guyzaken/Documents/Python Projects/Python/libraryproject/backend/instances'
-
-jwt = JWTManager(app)
-bcrypt = Bcrypt(app)
-CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "PUT", "OPTIONS"]}})
-
 
 
 @app.route('/signup', methods=['POST'])
@@ -286,8 +287,9 @@ def get_customer_loans(customer_name):
 
 if __name__ == "__main__":
     # with app.app_context():
-    #     db.drop_all() #     db.create_all()
-    #     unit_test()
+    #     db.drop_all()
+    #     Base.metadata.create_all(engine)        
+    #     populate_db()
     app.run(debug=True, port=5001)
 
 

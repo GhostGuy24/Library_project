@@ -38,7 +38,7 @@ This project is the backend for a library management system, designed to help li
 ### Setup Instructions
 1. Clone the repository:
    ```bash
-   git clone https://github.com/GhostGuy24/Library_Project_Final.git
+   git clone https://github.com/GhostGuy24/Library_project.git
    cd libraryproject/backend
    ```
 2. Install dependencies:

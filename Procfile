@@ -1,1 +1,1 @@
-web: hypercorn backend.app:app --host 0.0.0.0 --port 5001
+web: hypercorn backend.app:app -b 0.0.0.0:5001

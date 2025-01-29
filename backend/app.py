@@ -23,7 +23,7 @@ db = SQLAlchemy(app)
 jwt = JWTManager(app)
 jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
-CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "PUT", "OPTIONS"]}})
+CORS(app, resources={r"/*": {"origins": "https://librarysystemguy.netlify.app/*", "methods": ["GET", "POST", "DELETE", "PUT", "OPTIONS"]}})
 
 # only if db is empty, run the following function in the entry point to populate the database with some data:
 def populate_db():

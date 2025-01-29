@@ -13,7 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 
 app = Flask(__name__)
-
+app = ASGI(app)
 logging.basicConfig(level=logging.ERROR)
 app.config['SQLALCHEMY_DATABASE_URI'] = str(engine.url)
 app.config['JWT_SECRET_KEY'] = 'Guyzaken29'

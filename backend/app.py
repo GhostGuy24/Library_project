@@ -17,7 +17,6 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.ERROR)
 app.config['SQLALCHEMY_DATABASE_URI'] = str(engine.url)
 app.config['JWT_SECRET_KEY'] = 'Guyzaken29'
-app.config['JWT_SECRET_KEY'] = 'Guyzaken29'
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'instances')
 
